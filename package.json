@@ -1,0 +1,42 @@
+{
+  "name": "smsbulk-mcp",
+  "version": "0.1.0",
+  "description": "Model Context Protocol (MCP) server for the SMSBulk SMS & Email verification API.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://smsbulk.net",
+  "bin": {
+    "smsbulk-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    ".env.example"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "sms",
+    "sms-verification",
+    "email-verification",
+    "smsbulk"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "typescript": "^5.7.0"
+  }
+}
