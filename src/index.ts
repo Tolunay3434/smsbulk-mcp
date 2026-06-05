@@ -7,13 +7,13 @@
  * caller's own API key. It never stores secrets and never talks to any other
  * backend.
  *
- * NOTE: this is the C1 skeleton — tools are registered in later steps.
- *
  * IMPORTANT (stdio transport): stdout is the JSON-RPC channel. Never write
  * diagnostics to stdout — use stderr (console.error) only.
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SmsBulkClient } from "./smsbulk-client.js";
+import { registerCatalogTools } from "./tools/catalog.js";
 
 const NAME = "smsbulk-mcp";
 const VERSION = "0.1.0";
@@ -43,7 +43,14 @@ async function main(): Promise<void> {
     version: VERSION,
   });
 
-  // Tools are registered in later steps (C2+). The skeleton boots empty.
+  const client = new SmsBulkClient({
+    baseUrl: config.baseUrl,
+    apiKey: config.apiKey,
+  });
+
+  // Keyless catalog/discovery tools. Authenticated tools (SMS/email/wallet) and
+  // the in-memory spend/retry guard are registered in later steps (C3+).
+  registerCatalogTools(server, client);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
