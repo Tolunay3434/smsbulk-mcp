@@ -17,6 +17,7 @@ import { SessionGuard } from "./guard.js";
 import { registerCatalogTools } from "./tools/catalog.js";
 import { registerActivationTools } from "./tools/activations.js";
 import { registerWalletTools } from "./tools/wallet.js";
+import { registerEmailTools } from "./tools/email.js";
 
 const NAME = "smsbulk-mcp";
 const VERSION = "0.1.0";
@@ -60,7 +61,8 @@ async function main(): Promise<void> {
   // Authenticated tools — send x-api-key; backend returns 401 if missing/invalid.
   registerActivationTools(server, client, guard);
   registerWalletTools(server, client);
-  // Email tools (C4) and the soft spend cap (C5) are registered in later steps.
+  registerEmailTools(server, client, guard);
+  // The soft spend cap (C5) is registered in a later step.
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
