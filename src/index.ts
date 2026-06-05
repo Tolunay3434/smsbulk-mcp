@@ -14,6 +14,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { SmsBulkClient } from "./smsbulk-client.js";
 import { SessionGuard } from "./guard.js";
+import { SpendGuard } from "./spend-guard.js";
 import { registerCatalogTools } from "./tools/catalog.js";
 import { registerActivationTools } from "./tools/activations.js";
 import { registerWalletTools } from "./tools/wallet.js";
@@ -56,13 +57,16 @@ async function main(): Promise<void> {
   // only. Resets on restart — not a cross-process idempotency guarantee.
   const guard = new SessionGuard();
 
+  // Soft, in-memory, per-session spend cap (best-effort). Disabled unless
+  // MAX_SPEND_PER_SESSION is set. Wraps spending tools only.
+  const spendGuard = new SpendGuard(config.maxSpendPerSession);
+
   // Keyless catalog/discovery tools.
   registerCatalogTools(server, client);
   // Authenticated tools — send x-api-key; backend returns 401 if missing/invalid.
-  registerActivationTools(server, client, guard);
+  registerActivationTools(server, client, guard, spendGuard);
   registerWalletTools(server, client);
-  registerEmailTools(server, client, guard);
-  // The soft spend cap (C5) is registered in a later step.
+  registerEmailTools(server, client, guard, spendGuard);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

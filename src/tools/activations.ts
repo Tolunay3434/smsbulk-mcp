@@ -10,12 +10,14 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { SmsBulkClient } from "../smsbulk-client.js";
 import { SessionGuard } from "../guard.js";
+import { SpendGuard, extractUserCost } from "../spend-guard.js";
 import { relay, toolError } from "./helpers.js";
 
 export function registerActivationTools(
   server: McpServer,
   client: SmsBulkClient,
   guard: SessionGuard,
+  spendGuard: SpendGuard,
 ): void {
   server.registerTool(
     "request_number",
@@ -59,12 +61,16 @@ export function registerActivationTools(
           operator,
           idempotency_token,
         ]);
-        const { value, deduped } = await guard.run(fp, () =>
-          client.post("/activations", {
-            body: { serviceCode, countryIso, operator },
-            requireKey: true,
-          }),
+        const { value, deduped } = await guard.run(
+          fp,
+          () =>
+            client.post("/activations", {
+              body: { serviceCode, countryIso, operator },
+              requireKey: true,
+            }),
+          () => spendGuard.checkBeforeSpend(), // blocks only a fresh spend over the cap
         );
+        if (!deduped) spendGuard.record(extractUserCost(value));
         const json = JSON.stringify(value, null, 2);
         if (deduped) {
           return {
