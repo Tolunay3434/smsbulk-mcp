@@ -13,7 +13,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { SmsBulkClient } from "./smsbulk-client.js";
+import { SessionGuard } from "./guard.js";
 import { registerCatalogTools } from "./tools/catalog.js";
+import { registerActivationTools } from "./tools/activations.js";
+import { registerWalletTools } from "./tools/wallet.js";
 
 const NAME = "smsbulk-mcp";
 const VERSION = "0.1.0";
@@ -48,9 +51,16 @@ async function main(): Promise<void> {
     apiKey: config.apiKey,
   });
 
-  // Keyless catalog/discovery tools. Authenticated tools (SMS/email/wallet) and
-  // the in-memory spend/retry guard are registered in later steps (C3+).
+  // Best-effort, in-memory per-session retry guard (Yol B). Wraps spending tools
+  // only. Resets on restart — not a cross-process idempotency guarantee.
+  const guard = new SessionGuard();
+
+  // Keyless catalog/discovery tools.
   registerCatalogTools(server, client);
+  // Authenticated tools — send x-api-key; backend returns 401 if missing/invalid.
+  registerActivationTools(server, client, guard);
+  registerWalletTools(server, client);
+  // Email tools (C4) and the soft spend cap (C5) are registered in later steps.
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
